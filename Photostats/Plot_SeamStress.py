@@ -1,4 +1,3 @@
-import geometry_functions
 from geometry_functions import xyz_to_rdkit_mol, numpy_geom, flatten_xyz_files
 from plotting import plot_spawns_vs_mecis, plot_meci_types
 from dim_red import reduce_features
@@ -6,17 +5,16 @@ from pathlib import Path
 from tqdm import tqdm 
 
 spawn_folder = Path('data/aligned_geometries/SeamStress/benzene/type2/spawn')
-mecis = [ 
-    Path('data/aligned_geometries/SeamStress/benzene/type2/meci/Type1.xyz'),
-    Path('data/aligned_geometries/SeamStress/benzene/type2/meci/Type2.xyz'),
-    Path('data/aligned_geometries/SeamStress/benzene/type2/meci/Type3.xyz'),
-    
-]
+meci_folder =  Path('data/aligned_geometries/SeamStress/benzene/type2/meci/')
+Molecule_name = 'Benzene'
+reports_folder = Path(f"reports/figures/{Molecule_name}")
+reports_folder.mkdir(exist_ok=True)
+mecis = list(meci_folder.glob('*.xyz'))  
 reduction_technique= "UMAP"
 
 
 
-feature_vector, idx, smiles = flatten_xyz_files(spawn_folder, mecis)
+feature_vector, idx, smiles = flatten_xyz_files(spawn_folder, meci_folder)
 
 reduced_space = reduce_features(feature_vector,reduction_technique=reduction_technique,n_components=2)
 
@@ -31,23 +29,24 @@ idx_mecis     = idx[n_spawns:]
 
 
 plot_spawns_vs_mecis(
+    Molecule_name,
     X_spawns, X_mecis,
     smiles_spawns, smiles_mecis,
     idx_mecis,
     reduction_technique=reduction_technique,
-    style_file="/Users/connerbaucom/Desktop/Pieri/CTG/dim_red_comp/PhotoStats/prl.mplstyle"
+    style_file="/Users/connerbaucom/Desktop/Pieri/CTG/dim_red_comp/PhotoStats/prl.mplstyle",
+    save_path= reports_folder / f"{Molecule_name}_smiles.png"
 )
 
-# Path to your MECI classification CSV
-csv_file = "data/meci_classification/benzene/S1S0/meci_labels_humanlabels.csv"
+meci_class_labels = "data/meci_classification/benzene/S1S0/meci_labels_humanlabels.csv"
 
-n_star = len(mecis)
 
 plot_meci_types(
+    Molecule_name,
     reduced_space,  
     idx,            
     mecis,          
-    csv_file,       
-    n_star,         
-    reduction_technique=reduction_technique  
+    meci_class_labels,            
+    reduction_technique=reduction_technique,
+    save_path=reports_folder / f"{Molecule_name}_meci_types.png"
 )
