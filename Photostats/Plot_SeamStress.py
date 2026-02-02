@@ -2,7 +2,6 @@ from geometry_functions import xyz_to_rdkit_mol, numpy_geom, flatten_xyz_files
 from plotting import plot_spawns_vs_mecis, plot_meci_types
 from dim_red import reduce_features
 from pathlib import Path
-from tqdm import tqdm 
 
 spawn_folder = Path('data/aligned_geometries/SeamStress/benzene/type2/spawn')
 meci_folder =  Path('data/aligned_geometries/SeamStress/benzene/type2/meci/')

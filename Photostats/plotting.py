@@ -106,25 +106,20 @@ def plot_meci_types(Molecule_name=None, reduced_space=None, idx=None, mecis=None
         base_colors = ["#1c6f9f","#d85f2b","#3bb12e","#372dca","#e42626",
                        "#800080","#00ced1","#15bad4","#60ca97","#1a45bb"]
 
-    # Load MECI types from CSV
     df = pd.read_csv(csv_file)
     n_star = len(mecis)
     meci_idx_to_type = dict(zip(df['idx'], df['meci_type']))
     unique_types = sorted(df['meci_type'].unique())
     type_to_color = {t: base_colors[i % len(base_colors)] for i, t in enumerate(unique_types)}
 
-    # Assign colors to all points
     point_types = [meci_idx_to_type.get(i, "Unknown") for i in idx]
     point_colors = [type_to_color.get(t, "#bdbdbd") for t in point_types]
 
-    # Optional custom star colors for the last 4 MECIs
     star_colors_dict = {idx[-4]: "#0075f3", idx[-3]: "#f57812", idx[-2]: "#60e30e", idx[-1]: "#4d21d2"}
 
-    # Start figure
     fig, ax = plt.subplots(figsize=(7,6))
     ax.scatter(reduced_space[:,0], reduced_space[:,1], c=point_colors, s=point_size, alpha=0.85)
 
-    # Plot stars
     star_indices = np.arange(len(reduced_space)-n_star, len(reduced_space))
     star_handles = []
     for star_idx in star_indices:
@@ -136,7 +131,6 @@ def plot_meci_types(Molecule_name=None, reduced_space=None, idx=None, mecis=None
         )
         star_handles.append(h)
 
-    # Legends
     type_patches = [mpatches.Patch(color=color, label=t) for t,color in type_to_color.items()]
     type_legend = ax.legend(handles=type_patches, title="MECI Type", bbox_to_anchor=(1.0,1),
                              loc="upper left", title_fontsize=14, fontsize=12)
@@ -145,7 +139,6 @@ def plot_meci_types(Molecule_name=None, reduced_space=None, idx=None, mecis=None
     star_legend = ax.legend(handles=star_handles, title="MECIs", bbox_to_anchor=(1.05,0.3),
                              loc="upper left", title_fontsize=14, fontsize=12)
 
-    # Labels, title, ticks
     ax.set_xlabel(f"{reduction_technique} 1", fontsize=16)
     ax.set_ylabel(f"{reduction_technique} 2", fontsize=16)
     ax.tick_params(axis='x', labelsize=14)
@@ -156,7 +149,6 @@ def plot_meci_types(Molecule_name=None, reduced_space=None, idx=None, mecis=None
     ax.grid(False)
     plt.tight_layout()
 
-    # Save or show
     if save_path:
         plt.savefig(save_path, dpi=300)
         plt.close(fig)
