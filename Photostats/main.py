@@ -1,42 +1,53 @@
 import geometry_functions
-from geometry_functions import xyz_to_rdkit_mol, numpy_geom,
+from geometry_functions import xyz_to_rdkit_mol, numpy_geom, flatten_xyz_files
+from plotting import plot_spawns_vs_mecis, plot_meci_types
 from dim_red import reduce_features
 from pathlib import Path
-import tqdm
+from tqdm import tqdm 
 
-raw_spawns_folder = Path('../data/aligned_geometries/SeamStress/benzene/type2/spawn')
+spawn_folder = Path('data/aligned_geometries/SeamStress/benzene/type2/spawn')
 mecis = [ 
-    Path('../data/aligned_geometries/SeamStress/benzene/type2/meci/Type1.xyz'),
-    Path('../data/aligned_geometries/SeamStress/benzene/type2/meci/Type2.xyz'),
-    Path('../../data/aligned_geometries/SeamStress/benzene/type2/meci/Type3.xyz'),
+    Path('data/aligned_geometries/SeamStress/benzene/type2/meci/Type1.xyz'),
+    Path('data/aligned_geometries/SeamStress/benzene/type2/meci/Type2.xyz'),
+    Path('data/aligned_geometries/SeamStress/benzene/type2/meci/Type3.xyz'),
     
 ]
+reduction_technique= "UMAP"
 
 
-idx = []
-geometries = []
 
-smiles = []
+feature_vector, idx, smiles = flatten_xyz_files(spawn_folder, mecis)
 
-for x in tqdm.tqdm(list(raw_spawns_folder.glob('*'))):
-    mol = xyz_to_rdkit_mol(x,total_charge=0)
-    smile = Chem.MolToSmiles(mol, canonical=True)
-    geom = numpy_geom(mol)
-    flattend_geom = geom.flatten()
-    geometries.append(flattend_geom)
-    idx.append(x.stem)
-    smiles.append(smile)
+reduced_space = reduce_features(feature_vector,reduction_technique=reduction_technique,n_components=2)
+
+n_spawns = len(list(spawn_folder.glob('*')))
+
+X_spawns = reduced_space[:n_spawns]
+X_mecis  = reduced_space[n_spawns:]
+
+smiles_spawns = smiles[:n_spawns]
+smiles_mecis  = smiles[n_spawns:]
+idx_mecis     = idx[n_spawns:]
 
 
-for meci in mecis:
-    print(meci)
-    mol = xyz_to_rdkit_mol(meci,total_charge=0)
-    smile = Chem.MolToSmiles(mol, canonical=True)
+plot_spawns_vs_mecis(
+    X_spawns, X_mecis,
+    smiles_spawns, smiles_mecis,
+    idx_mecis,
+    reduction_technique=reduction_technique,
+    style_file="/Users/connerbaucom/Desktop/Pieri/CTG/dim_red_comp/PhotoStats/prl.mplstyle"
+)
 
-    geom = numpy_geom(mol)
-    flattend_geom = geom.flatten()
-    geometries.append(flattend_geom)
-    smiles.append(smile)
-    idx.append(meci.stem)
+# Path to your MECI classification CSV
+csv_file = "data/meci_classification/benzene/S1S0/meci_labels_humanlabels.csv"
 
-feature_vector = np.array(geometries)
+n_star = len(mecis)
+
+plot_meci_types(
+    reduced_space,  
+    idx,            
+    mecis,          
+    csv_file,       
+    n_star,         
+    reduction_technique=reduction_technique  
+)

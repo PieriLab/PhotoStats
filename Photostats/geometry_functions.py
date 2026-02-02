@@ -4,7 +4,8 @@ from rdkit.Chem import rdDetermineBonds
 from scipy.spatial.transform import Rotation as R
 from scipy.spatial.distance import pdist, squareform
 import numpy as np 
-
+from pathlib import Path
+from tqdm import tqdm 
 def xyz_to_rdkit_mol(xyz_file, total_charge):
     """
     Convert an XYZ file with explicit hydrogens to an RDKit Mol,
@@ -126,3 +127,39 @@ def numpy_geom(mol):
 
 
 
+def flatten_xyz_files(spawn_folder: Path, meci_folder: Path, total_charge=0):
+    """
+    Process spawn geometries and MECIs into flattened geometries and SMILES.
+
+    Parameters:
+        spawn_folder (Path): Folder containing spawn XYZ files
+        meci_files (list of Path): List of MECI XYZ files
+        total_charge (int): Charge to assign to molecules
+
+    Returns:
+        feature_vector (np.ndarray): Array of flattened geometries
+        idx (list): List of file stems
+        smiles (list): List of SMILES strings
+    """
+    geometries = []
+    idx = []
+    smiles = []
+
+    # Process spawns
+    for x in tqdm(list(spawn_folder.glob('*'))):
+        mol = xyz_to_rdkit_mol(x, total_charge=total_charge)
+        smiles.append(Chem.MolToSmiles(mol, canonical=True))
+        geom = numpy_geom(mol)
+        geometries.append(geom.flatten())
+        idx.append(x.stem)
+
+    for x in tqdm(list(meci_folder.glob('*'))):
+        print(f"Processing MECI: {x.name}")
+        mol = xyz_to_rdkit_mol(x, total_charge=total_charge)
+        smiles.append(Chem.MolToSmiles(mol, canonical=True))
+        geom = numpy_geom(mol)
+        geometries.append(geom.flatten())
+        idx.append(x.stem)
+
+    feature_vector = np.array(geometries)
+    return feature_vector, idx, smiles
