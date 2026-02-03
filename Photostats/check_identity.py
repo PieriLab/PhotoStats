@@ -1,7 +1,7 @@
-from  models.geometry_functions import numpy_geom
-from  models.geometry_functions import align_and_rmsd_numpy
-from  models.geometry_functions import REFLECTIONS
-from  models.geometry_functions import reflect_axis
+from  Photostats.geometry_functions import numpy_geom
+from  Photostats.geometry_functions import align_and_rmsd_numpy
+from  Photostats.geometry_functions import REFLECTIONS
+from  Photostats.geometry_functions import reflect_axis
 
 
 
