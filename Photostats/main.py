@@ -1,8 +1,9 @@
 import argparse
 import numpy as np
+import pandas as pd 
 from tqdm import tqdm
 from dimensionallity_reduction import reduce_features
-from feature_comparison import linear_classifier_accuracy
+from feature_comparison import full_embedding_analysis, linear_classifier_accuracy
 from process_geometries import (
     GeometryDataset,
     generate_SOAP,
@@ -11,6 +12,33 @@ from process_geometries import (
     generate_MBTR,
     flatten_cartesian
 )
+
+def results_dict_to_df(results):
+    rows = []
+
+    for feature, methods in results.items():
+        for method, dims in methods.items():
+            for dim, metrics in dims.items():
+
+                # Handle NONE case
+                if dim == "full":
+                    n_dim = None
+                else:
+                    n_dim = dim
+
+                row = {
+                    "feature": feature,
+                    "reduction": method,
+                    "n_components": n_dim,
+                }
+
+                # Add all metrics
+                for k, v in metrics.items():
+                    row[k] = v
+
+                rows.append(row)
+
+    return pd.DataFrame(rows)
 
 def main():
     #parser = argparse.ArgumentParser(description="Process XYZ geometries and MECI labels")
@@ -36,6 +64,7 @@ def main():
     meci_labels_csv=meci_labels
     )
 
+
     print(f"Loaded {len(dataset)} structures:\n")
 
     feature_list = []
@@ -60,8 +89,9 @@ def main():
     
 
     y = np.array(dataset.meci_labels)
+    print(dataset.names, dataset.meci_labels)
     labeled_positions = np.arange(len(y))  
-
+ 
     # Build feature matrices
     feature_matrices = {
         "SOAP": np.vstack([f["SOAP"] for f in feature_list]),
@@ -86,18 +116,25 @@ def main():
             results[feature_name][method] = {}
 
             if method == "NONE":
-                acc = linear_classifier_accuracy(
+
+
+                metrics = linear_classifier_accuracy(
                     reduced_feature=X,
                     labeled_positions=labeled_positions,
                     y_labeled=y
                 )
-                results[feature_name][method]["full"] = acc
+                
+
+                if isinstance(metrics, float):
+                    metrics = {"linear_accuracy": metrics}
+
+                results[feature_name][method]["full"] = metrics
                 continue
 
-        # Dimensionality r
+            # check all dimensions
             for dim in target_dims:
 
-            # Practical guardrails
+            # no highdim tsne
                 if method == "TSNE" and dim > 3:
                     continue
                 if dim >= X.shape[1]:
@@ -110,19 +147,25 @@ def main():
                         n_components=dim
                     )
 
-                    acc = linear_classifier_accuracy(
-                        reduced_feature=X_reduced,
-                        labeled_positions=labeled_positions,
-                        y_labeled=y
-                    )
+                    metrics = full_embedding_analysis(
+                                X_high=X,
+                                X_low=X_reduced,
+                                labeled_positions=labeled_positions,
+                                y_labeled=y
+                                )
 
                 except Exception as e:
                     print(f"Failed: {feature_name}, {method}, dim={dim} → {e}")
                     acc = None
 
-                results[feature_name][method][dim] = acc
+                results[feature_name][method][dim] = metrics
 
     print(results)
+
+    results_df = results_dict_to_df(results)
+    output_path = "embedding_analysis_results.csv"
+    results_df.to_csv(output_path, index=False)
+
 
 
         
