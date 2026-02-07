@@ -13,64 +13,74 @@ import numpy as np
 import pandas as pd
 from ase.io import read
 
+import os
+import numpy as np
+import pandas as pd
+from ase.io import read
+
 class GeometryDataset:
-    def __init__(self, folder_path, file_extension=".xyz"):
+    def __init__(
+        self,
+        folder_path,
+        meci_labels_csv=None,
+        file_extension=".xyz",
+        idx_key="idx",
+        label_key="meci_type",
+    ):
         self.folder_path = folder_path
         self.file_extension = file_extension
 
         self.structures = []
         self.names = []
-        self.meci_labels = None  # populated later
+        self.meci_labels = []
+
+        # Load MECI labels if provided
+        if meci_labels_csv is not None:
+            df = pd.read_csv(meci_labels_csv)
+            self._meci_label_dict = dict(zip(df[idx_key], df[label_key]))
+        else:
+            self._meci_label_dict = None
 
         self._load_files()
 
+        if meci_labels_csv is not None:
+            print(
+                f"Loaded {len(self.structures)} labeled geometries "
+                f"from {self.folder_path}"
+            )
+
     def _load_files(self):
         for filename in sorted(os.listdir(self.folder_path)):
-            if filename.endswith(self.file_extension):
-                filepath = os.path.join(self.folder_path, filename)
-                try:
-                    atoms = read(filepath)
-                    self.structures.append(atoms)
-                    self.names.append(os.path.splitext(filename)[0])
-                except Exception as e:
-                    print(f"Warning: could not read {filename}: {e}")
+            if not filename.endswith(self.file_extension):
+                continue
 
-    def attach_and_prune_meci_labels(self, meci_labels_csv, idx_key="idx", label_key="meci_type"):
-        """
-        Attach MECI labels to the dataset and prune unlabeled geometries.
-        """
-        df = pd.read_csv(meci_labels_csv)
-        label_dict = dict(zip(df[idx_key], df[label_key]))
+            name = os.path.splitext(filename)[0]
 
-        labels_aligned = [
-            label_dict.get(name, np.nan)
-            for name in self.names
-        ]
+            # Skip if MECI labels provided and this geometry is unlabeled
+            if self._meci_label_dict is not None:
+                label = self._meci_label_dict.get(name, None)
+                if label is None or pd.isna(label):
+                    continue
 
-        mask = [not pd.isna(lbl) for lbl in labels_aligned]
+            filepath = os.path.join(self.folder_path, filename)
 
-        # Prune dataset in place
-        self.structures = [
-            s for s, keep in zip(self.structures, mask) if keep
-        ]
-        self.names = [
-            n for n, keep in zip(self.names, mask) if keep
-        ]
-        self.meci_labels = [
-            lbl for lbl, keep in zip(labels_aligned, mask) if keep
-        ]
+            try:
+                atoms = read(filepath)
+                self.structures.append(atoms)
+                self.names.append(name)
 
-        print(
-            f"Dataset pruned: kept {len(self.names)} / {len(mask)} geometries "
-            f"with MECI labels"
-        )
+                if self._meci_label_dict is not None:
+                    self.meci_labels.append(label)
+
+            except Exception as e:
+                print(f"Warning: could not read {filename}: {e}")
+
+        if self._meci_label_dict is None:
+            self.meci_labels = None
 
     def to_meci_dataframe(self):
-        """
-        Return MECI labels as a DataFrame aligned with the dataset.
-        """
         if self.meci_labels is None:
-            raise RuntimeError("MECI labels not attached yet.")
+            raise RuntimeError("Dataset was created without MECI labels.")
 
         return pd.DataFrame({
             "idx": self.names,
@@ -84,6 +94,7 @@ class GeometryDataset:
         if self.meci_labels is None:
             return self.structures[idx], self.names[idx]
         return self.structures[idx], self.names[idx], self.meci_labels[idx]
+
 
 
 
