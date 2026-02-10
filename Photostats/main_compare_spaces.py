@@ -1,4 +1,5 @@
 import argparse
+from collections import Counter
 import numpy as np
 import pandas as pd 
 from tqdm import tqdm
@@ -12,8 +13,13 @@ from process_geometries import (
     generate_MBTR,
     flatten_cartesian
 )
-from meci_analysis import count_meci_classes
 
+def count_meci_classes(self):
+    if self.meci_labels is None:
+        raise RuntimeError("Dataset was created without MECI labels.")
+
+    return Counter(self.meci_labels)
+    
 def results_dict_to_df(results):
     rows = []
 
