@@ -12,6 +12,7 @@ from process_geometries import (
     generate_MBTR,
     flatten_cartesian
 )
+from meci_analysis import count_meci_classes
 
 def results_dict_to_df(results):
     rows = []
@@ -49,13 +50,13 @@ def main():
 
 
     ## load in data
-    xyz_folder = '/Users/connerbaucom/Desktop/Pieri/CTG/dim_red_comp/PhotoStats/data/aligned_geometries/SeamStress/benzene/type2/spawn'
+    xyz_folder = '/Users/connerbaucom/Desktop/Pieri/CTG/dim_red_comp/PhotoStats/data/aligned_geometries/SeamStress/ethylene/spawn'
 
     
 
 
 
-    meci_labels = '/Users/connerbaucom/Desktop/Pieri/CTG/dim_red_comp/PhotoStats/data/meci_classification/benzene/S1S0/meci_labels_humanlabels.csv'
+    meci_labels = '/Users/connerbaucom/Desktop/Pieri/CTG/dim_red_comp/PhotoStats/data/meci_classification/ethylene/meci_labels_humanlabels.csv'
    
     #generate feature sets
 
@@ -89,7 +90,7 @@ def main():
     
 
     y = np.array(dataset.meci_labels)
-    print(dataset.names, dataset.meci_labels)
+    #print(dataset.names, dataset.meci_labels)
     labeled_positions = np.arange(len(y))  
  
     # Build feature matrices
@@ -107,6 +108,10 @@ def main():
     target_dims = [1, 2, 3]
 
     results = {}
+
+
+    print(count_meci_classes(dataset))
+
 
     for feature_name, X in feature_matrices.items():
         print(f"\n=== Feature: {feature_name} ===")
@@ -160,10 +165,12 @@ def main():
 
                 results[feature_name][method][dim] = metrics
 
+                count_meci_classes(dataset)
+
     print(results)
 
     results_df = results_dict_to_df(results)
-    output_path = "embedding_analysis_results.csv"
+    output_path = "embedding_analysis_results_butadiene.csv"
     results_df.to_csv(output_path, index=False)
 
 
