@@ -4,14 +4,10 @@ import pandas as pd
 from ase import Atoms
 from ase.io import read, write
 from process_geometries import GeometryDataset
-from scipy.stats import skew, kurtosis
+from scipy.stats import skew, kurtosis, kstest
 
-# ----------------------------
-# Helper functions
-# ----------------------------
 
 def compute_cartesian_average(structures):
-    """Compute per-atom mean positions."""
     n_atoms = len(structures[0])
     avg_pos = np.zeros((n_atoms, 3))
     for atoms in structures:
@@ -20,7 +16,6 @@ def compute_cartesian_average(structures):
     return avg_pos
 
 def compute_medoid(structures):
-    """Compute medoid: structure with minimal total RMSD to all others."""
     n = len(structures)
     total_rmsd = np.zeros(n)
     for i in range(n):
@@ -31,13 +26,10 @@ def compute_medoid(structures):
     medoid_idx = np.argmin(total_rmsd)
     return structures[medoid_idx].get_positions()
 
-from scipy.stats import skew, kurtosis
-import numpy as np
-import pandas as pd
 
-from scipy.stats import skew, kurtosis
-import numpy as np
-import pandas as pd
+
+def compute_global_stats(structure,ref_coordinates):
+    return
 
 def compute_atomwise_stats_vs_meci(structures, ref_coords):
     """
@@ -80,10 +72,10 @@ def compute_atomwise_stats_vs_meci(structures, ref_coords):
     skew_z = skew(displacement[:, :, 2], axis=0)
     skew_norm = np.linalg.norm(np.stack([skew_x, skew_y, skew_z], axis=1), axis=1)
 
-    # Kurtosis (magnitude-based)
-    kurts = kurtosis(displacement_mags, axis=0)  # excess kurtosis
+    kurts = kurtosis(displacement_mags, axis=0) 
 
-    # Assemble DataFrame
+    smirnov = kstest(displacement_mags, axis=0)
+
     df = pd.DataFrame({
         "atom_index": np.arange(n_atoms),
         "element": symbols,
@@ -105,7 +97,8 @@ def compute_atomwise_stats_vs_meci(structures, ref_coords):
         "skew_y": skew_y,
         "skew_z": skew_z,
         "skew_norm": skew_norm,
-        "kurtosis": kurts
+        "kurtosis": kurts,
+        "kstest": smirnov[1]
     })
 
     return df
@@ -114,9 +107,6 @@ def compute_atomwise_stats_vs_meci(structures, ref_coords):
 
 
 
-# ----------------------------
-# Main pipeline
-# ----------------------------
 
 def main(xyz_folder, meci_labels_csv, meci_class_meci_dict, output_folder,
          average_method="mean"):
@@ -144,7 +134,6 @@ def main(xyz_folder, meci_labels_csv, meci_class_meci_dict, output_folder,
             continue
         print(f"\nProcessing class {class_name} ({len(structures)} structures)")
 
-        # Compute average geometry
         if average_method == "mean":
             avg_coords = compute_cartesian_average(structures)
         elif average_method == "medoid":
@@ -152,7 +141,6 @@ def main(xyz_folder, meci_labels_csv, meci_class_meci_dict, output_folder,
         else:
             raise ValueError("Unsupported average_method")
 
-        # Load reference MECI coordinates for this class
         ref_path = meci_class_meci_dict.get(class_name, None)
         if ref_path is not None and os.path.exists(ref_path):
             ref_atoms = read(ref_path)
@@ -181,17 +169,16 @@ def main(xyz_folder, meci_labels_csv, meci_class_meci_dict, output_folder,
 # Example usage
 # ----------------------------
 if __name__ == "__main__":
-    xyz_folder = '/Users/connerbaucom/Desktop/Pieri/CTG/dim_red_comp/PhotoStats/data/aligned_geometries/SeamStress_improper_rotations/benzene'
-    meci_labels_csv = '/Users/connerbaucom/Desktop/Pieri/CTG/dim_red_comp/PhotoStats/data/meci_classification/benzene/S1S0/meci_labels_humanlabels.csv'
+    xyz_folder = 'data/aligned_geometries/SeamStress_improper_rotations/benzene'
+    meci_labels_csv = 'data/meci_classification/benzene/S1S0/meci_labels_humanlabels.csv'
     output_folder = "./class_averages"
 
-    # Map each CSV class to a MECI XYZ file
     meci_class_meci_dict = {
-        "Type 1": "/Users/connerbaucom/Desktop/Pieri/CTG/dim_red_comp/PhotoStats/data/raw_geometries/meci/benzene_main_meci/Type 1.xyz",
-        "Type 2": "/Users/connerbaucom/Desktop/Pieri/CTG/dim_red_comp/PhotoStats/data/raw_geometries/meci/benzene_main_meci/Type 2.xyz",
-        "Type 3": "/Users/connerbaucom/Desktop/Pieri/CTG/dim_red_comp/PhotoStats/data/raw_geometries/meci/benzene_main_meci/Type 3.xyz"
+        "Type 1": "data/raw_geometries/meci/benzene_main_meci/Type 1.xyz",
+        "Type 2": "data/raw_geometries/meci/benzene_main_meci/Type 2.xyz",
+        "Type 3": "data/raw_geometries/meci/benzene_main_meci/Type 3.xyz"
     }
 
-    average_method = "mean"  # or "medoid"
+    average_method = "mean"  #  mean or medoid
 
     main(xyz_folder, meci_labels_csv, meci_class_meci_dict, output_folder, average_method)

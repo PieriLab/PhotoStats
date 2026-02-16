@@ -87,7 +87,7 @@ def plot_molecule_vectors(df, vector_type="dev", scale=1.0, title=None, bond_cut
 
 
 if __name__ == "__main__":
-    csv_file = "/Users/connerbaucom/Desktop/Pieri/CTG/dim_red_comp/PhotoStats/class_averages/Type 3_atomwise_stats.csv"  # replace with your path
+    csv_file = "data/class_stat_analysis/benzene_class_averages/Type 3_atomwise_stats.csv"  # replace with your path
     df = pd.read_csv(csv_file)
 
     plot_molecule_vectors(df, vector_type="dev", scale=1.0, title="Deviation from MECI", bond_cutoff=1.6)

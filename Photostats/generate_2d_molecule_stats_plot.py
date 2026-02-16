@@ -62,7 +62,7 @@ def plot_molecule_2d_3d_bonds(df, vector_type="dev", scale=1.0, title=None, bond
 
 
 if __name__ == "__main__":
-    csv_file = "/Users/connerbaucom/Desktop/Pieri/CTG/dim_red_comp/PhotoStats/class_averages/Type 3_atomwise_stats.csv"
+    csv_file = "data/class_stat_analysis/benzene_class_averages/Type 3_atomwise_stats.csv"
     df = pd.read_csv(csv_file)
 
     plot_molecule_2d_3d_bonds(df, vector_type="dev", scale=1.0, title="Mean Deviation from MECI Angstrom")

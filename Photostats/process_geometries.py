@@ -5,18 +5,10 @@ from dscribe.descriptors import SOAP
 from dscribe.descriptors import MBTR
 from scipy.spatial.distance import pdist, squareform
 from ase import Atoms
-
-
-import numpy as np
-import os
-import numpy as np
 import pandas as pd
 from ase.io import read
 
-import os
-import numpy as np
-import pandas as pd
-from ase.io import read
+
 
 class GeometryDataset:
     def __init__(
@@ -26,6 +18,7 @@ class GeometryDataset:
         file_extension=".xyz",
         idx_key="idx",
         label_key="meci_type",
+        min_class_count=2,
     ):
         self.folder_path = folder_path
         self.file_extension = file_extension
@@ -34,10 +27,30 @@ class GeometryDataset:
         self.names = []
         self.meci_labels = []
 
-        # Load MECI labels if provided
+        # Load and filter MECI labels if provided
         if meci_labels_csv is not None:
             df = pd.read_csv(meci_labels_csv)
-            self._meci_label_dict = dict(zip(df[idx_key], df[label_key]))
+
+            # Drop missing labels
+            df = df.dropna(subset=[label_key])
+
+            # Count class frequencies
+            label_counts = df[label_key].value_counts()
+
+            # Keep only classes with at least min_class_count samples
+            valid_labels = label_counts[label_counts >= min_class_count].index
+
+            # Filter dataframe
+            df = df[df[label_key].isin(valid_labels)]
+
+            # Build lookup dictionary
+            self._meci_label_dict = dict(zip(df[idx_key].astype(str),
+                                             df[label_key]))
+
+            print(
+                f"Keeping {len(valid_labels)} MECI classes "
+                f"with ≥ {min_class_count} samples"
+            )
         else:
             self._meci_label_dict = None
 
@@ -56,10 +69,10 @@ class GeometryDataset:
 
             name = os.path.splitext(filename)[0]
 
-            # Skip if MECI labels provided and this geometry is unlabeled
+            # Skip if labels provided and this geometry is filtered/unlabeled
             if self._meci_label_dict is not None:
                 label = self._meci_label_dict.get(name, None)
-                if label is None or pd.isna(label):
+                if label is None:
                     continue
 
             filepath = os.path.join(self.folder_path, filename)
@@ -94,6 +107,7 @@ class GeometryDataset:
         if self.meci_labels is None:
             return self.structures[idx], self.names[idx]
         return self.structures[idx], self.names[idx], self.meci_labels[idx]
+
 
 
 
