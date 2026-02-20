@@ -78,13 +78,13 @@ def main():
 
   
 
-    xyz_folder = "/Users/connerbaucom/Desktop/Pieri/CTG/dim_red_comp/PhotoStats/data/aligned_geometries/seamstress_reflection/benzene/1_2/spawns"
+    xyz_folder = "/Users/connerbaucom/Desktop/Pieri/CTG/dim_red_comp/PhotoStats/data/aligned_geometries/mcs/ethylene"
 
-    meci_folder = "/Users/connerbaucom/Desktop/Pieri/CTG/dim_red_comp/PhotoStats/data/aligned_geometries/seamstress_reflection/benzene/1_2/mecis"
+    meci_folder = "/Users/connerbaucom/Desktop/Pieri/CTG/dim_red_comp/PhotoStats/data/raw_geometries/meci/ethylene_main_meci"
 
-    meci_labels = "/Users/connerbaucom/Desktop/Pieri/CTG/dim_red_comp/PhotoStats/data/meci_classification/benzene/S1S0/meci_labels_0.05_threshold_humanlabels.csv"
+    meci_labels = "/Users/connerbaucom/Desktop/Pieri/CTG/dim_red_comp/PhotoStats/data/meci_classification/ethylene/meci_labels_0.1_threshold_humanlabels.csv"
 
-    output_dir = "embedding_outputs_benzene"
+    output_dir = "embedding_output_ethylene"
     os.makedirs(output_dir, exist_ok=True)
 
     plot2d_dir = os.path.join(output_dir, "plots_2D")
